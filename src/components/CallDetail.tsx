@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, TrendingUp, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, TrendingUp, User, Star, Building, Briefcase } from "lucide-react";
 import { Call } from "@/types/call";
 
 interface CallDetailProps {
@@ -82,6 +82,69 @@ export const CallDetail = ({ call, onBack }: CallDetailProps) => {
             <p className="text-2xl font-bold text-foreground">{call.keyMetrics.decisions}</p>
           </Card>
         </div>
+
+        {call.metadata && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Lead Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {call.metadata.lead_score !== undefined && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-muted-foreground">Lead Score</span>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{call.metadata.lead_score}/10</p>
+                </Card>
+              )}
+              {call.metadata.follow_up_date && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-muted-foreground">Follow-up Date</span>
+                  </div>
+                  <p className="text-lg font-medium text-foreground">
+                    {new Date(call.metadata.follow_up_date).toLocaleDateString()}
+                  </p>
+                </Card>
+              )}
+              {call.metadata.updated_at && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-muted-foreground">Last Updated</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(call.metadata.updated_at).toLocaleString()}
+                  </p>
+                </Card>
+              )}
+              {call.metadata.user_enrichment?.company_name && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-muted-foreground">Company</span>
+                  </div>
+                  <p className="text-foreground font-medium">{call.metadata.user_enrichment.company_name}</p>
+                </Card>
+              )}
+              {call.metadata.user_enrichment?.industry && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Briefcase className="w-5 h-5 text-primary" />
+                    <span className="text-sm text-muted-foreground">Industry</span>
+                  </div>
+                  <p className="text-foreground font-medium">{call.metadata.user_enrichment.industry}</p>
+                </Card>
+              )}
+              {call.metadata.user_enrichment?.context && (
+                <Card className="p-4 bg-secondary/50 border-border md:col-span-3">
+                  <span className="text-sm text-muted-foreground block mb-2">Context</span>
+                  <p className="text-foreground leading-relaxed">{call.metadata.user_enrichment.context}</p>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
 
         {call.dataCollection && Object.values(call.dataCollection).some(v => v) && (
           <div className="mb-8">
