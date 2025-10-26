@@ -1,3 +1,7 @@
+'use client'
+
+import Link from 'next/link'
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -13,7 +17,9 @@ export default function LandingPage() {
             <a href="#product" className="hover:text-orange-600">Product</a>
             <a href="#faq" className="hover:text-orange-600">FAQ</a>
           </nav>
-          <a href="/dashboard" className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-white text-sm font-medium shadow-sm hover:bg-orange-700 transition">Get started</a>
+          <Link href="/dashboard" className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-white text-sm font-medium shadow-sm hover:bg-orange-700 transition">
+            Get started
+          </Link>
         </div>
       </header>
 
@@ -32,9 +38,9 @@ export default function LandingPage() {
               We're building a YC/VC from the ground up using AI—autonomous sourcing, qualification, filtering, and vetting—so you capture <span className="font-semibold text-slate-800">alpha leads</span> before the market blinks.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <a href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-3 text-white font-semibold shadow-sm hover:bg-orange-700 transition">
+              <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-3 text-white font-semibold shadow-sm hover:bg-orange-700 transition">
                 Get started
-              </a>
+              </Link>
               <a href="#how" className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-6 py-3 font-semibold hover:border-slate-400">
                 See how it works
               </a>
@@ -158,9 +164,9 @@ export default function LandingPage() {
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">Turn noise into alpha leads.</h2>
           <p className="mt-4 text-lg text-orange-50">Pilot seats are limited. If you run a thesis‑driven fund and want unfair speed, let's talk.</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-orange-700 hover:bg-orange-50 transition">
+            <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-orange-700 hover:bg-orange-50 transition">
               Get started now
-            </a>
+            </Link>
           </div>
           <p className="mt-3 text-sm text-orange-100">Start exploring your dealflow pipeline</p>
         </div>
