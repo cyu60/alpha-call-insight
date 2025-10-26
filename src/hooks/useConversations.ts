@@ -48,7 +48,7 @@ export const useConversations = () => {
       setLoading(true);
       setError(null);
 
-      // First, try to fetch from database
+      // Fetch from database
       const { data: dbData, error: dbError } = await supabase
         .from('conversations')
         .select(`
@@ -60,6 +60,7 @@ export const useConversations = () => {
 
       if (dbError) {
         console.error('Database error:', dbError);
+        throw dbError;
       }
 
       if (dbData && dbData.length > 0) {
@@ -88,21 +89,8 @@ export const useConversations = () => {
           transcript: [],
         }));
         setCalls(transformedCalls);
-      }
-
-      // Also fetch fresh data from ElevenLabs API to update database
-      const { data, error: fnError } = await supabase.functions.invoke('fetch-conversations');
-
-      if (fnError) {
-        console.error('Edge function error:', fnError);
-        if (!dbData || dbData.length === 0) {
-          throw fnError;
-        }
-      } else if (data?.conversations) {
-        const transformedCalls: Call[] = data.conversations.map((conv: ElevenLabsConversation) => 
-          transformConversation(conv)
-        );
-        setCalls(transformedCalls);
+      } else {
+        setCalls([]);
       }
     } catch (err) {
       console.error('Error fetching conversations:', err);
