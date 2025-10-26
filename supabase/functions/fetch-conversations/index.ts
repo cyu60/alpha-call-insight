@@ -100,6 +100,9 @@ serve(async (req) => {
         console.log(`Transcript length: ${conv.transcript?.length || 0}`);
         console.log(`Metadata:`, JSON.stringify(conv.metadata || {}));
         
+        // Extract founder email from metadata
+        const founderEmail = conv.metadata?.email || conv.metadata?.user_email || conv.metadata?.founder_email || null;
+
         // Upsert conversation with transcript and metadata
         const { data: conversationData, error: convError } = await supabase
           .from('conversations')
@@ -112,6 +115,7 @@ serve(async (req) => {
             summary: conv.call_summary_title || 'No summary available',
             transcript: conv.transcript || [],
             metadata: conv.metadata || {},
+            founder_email: founderEmail,
           }, {
             onConflict: 'conversation_id'
           })

@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'Alpha Call Insight',
   description: 'AI-powered call insights and analytics',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

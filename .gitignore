@@ -15,6 +15,11 @@ dist-ssr
 # Next.js
 .next/
 next-env.d.ts
+.env.local
+.env
+
+# Supabase
+supabase/.temp/
 
 .env*
 
