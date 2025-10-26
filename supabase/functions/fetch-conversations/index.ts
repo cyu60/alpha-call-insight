@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +13,18 @@ serve(async (req) => {
 
   try {
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Supabase credentials not configured');
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     console.log('Fetching Gary Tan AI conversations from ElevenLabs...');
 
@@ -84,6 +93,65 @@ serve(async (req) => {
 
     console.log(`Returning ${detailedConversations.length} detailed conversations`);
 
+    // Save conversations to database
+    for (const conv of detailedConversations) {
+      try {
+        // Upsert conversation
+        const { data: conversationData, error: convError } = await supabase
+          .from('conversations')
+          .upsert({
+            conversation_id: conv.conversation_id,
+            title: conv.call_summary_title || 'Investor Call',
+            participant: conv.analysis?.data_collection_results?.name?.value || conv.agent_name || 'AI Agent',
+            duration: conv.call_duration_secs || 0,
+            sentiment: determineSentiment(conv),
+            summary: conv.call_summary_title || 'No summary available',
+          }, {
+            onConflict: 'conversation_id'
+          })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error(`Error saving conversation ${conv.conversation_id}:`, convError);
+          continue;
+        }
+
+        // Save data collection if available
+        if (conv.analysis?.data_collection_results) {
+          const dcResults = conv.analysis.data_collection_results;
+          await supabase
+            .from('data_collection')
+            .upsert({
+              conversation_id: conversationData.id,
+              name: dcResults.name?.value || null,
+              profile: dcResults.Profile?.value || null,
+              stage: dcResults.Stage?.value || null,
+              revenue: dcResults.Revenue?.value || null,
+              region: dcResults.Region?.value || null,
+            }, {
+              onConflict: 'conversation_id'
+            });
+        }
+
+        // Save metrics
+        const actionItems = countActionItems(conv.transcript || []);
+        await supabase
+          .from('call_metrics')
+          .upsert({
+            conversation_id: conversationData.id,
+            action_items: actionItems,
+            questions: 0,
+            transcript_length: conv.transcript?.length || 0,
+          }, {
+            onConflict: 'conversation_id'
+          });
+
+      } catch (error) {
+        console.error(`Exception saving conversation ${conv.conversation_id}:`, error);
+      }
+    }
+
     return new Response(
       JSON.stringify({ conversations: detailedConversations }),
       {
@@ -101,3 +169,27 @@ serve(async (req) => {
     );
   }
 });
+
+function determineSentiment(conv: any): string {
+  let sentiment = 'neutral';
+  if (conv.analysis?.evaluation_criteria_results) {
+    const results = Object.values(conv.analysis.evaluation_criteria_results);
+    const passCount = results.filter((r: any) => r.result).length;
+    const passRate = passCount / results.length;
+    
+    if (passRate >= 0.7) sentiment = 'positive';
+    else if (passRate <= 0.3) sentiment = 'negative';
+  } else if (conv.call_successful === 'success') {
+    sentiment = 'positive';
+  } else if (conv.call_successful === 'failed') {
+    sentiment = 'negative';
+  }
+  return sentiment;
+}
+
+function countActionItems(transcript: any[]): number {
+  const actionWords = ['will', 'should', 'need to', 'must', 'todo', 'action', 'follow up', 'next step'];
+  return transcript.filter((t: any) => 
+    actionWords.some(word => t.message?.toLowerCase().includes(word))
+  ).length;
+}
