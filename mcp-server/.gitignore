@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.json
+!package.json
+!tsconfig.json
+.env
+.env.local
+
