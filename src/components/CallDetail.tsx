@@ -83,6 +83,44 @@ export const CallDetail = ({ call, onBack }: CallDetailProps) => {
           </Card>
         </div>
 
+        {call.dataCollection && Object.values(call.dataCollection).some(v => v) && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Founder Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {call.dataCollection.name && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <span className="text-sm text-muted-foreground block mb-1">Name</span>
+                  <p className="text-foreground font-medium">{call.dataCollection.name}</p>
+                </Card>
+              )}
+              {call.dataCollection.profile && (
+                <Card className="p-4 bg-secondary/50 border-border md:col-span-2">
+                  <span className="text-sm text-muted-foreground block mb-1">Profile</span>
+                  <p className="text-foreground">{call.dataCollection.profile}</p>
+                </Card>
+              )}
+              {call.dataCollection.stage && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <span className="text-sm text-muted-foreground block mb-1">Stage</span>
+                  <p className="text-foreground font-medium">{call.dataCollection.stage}</p>
+                </Card>
+              )}
+              {call.dataCollection.revenue && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <span className="text-sm text-muted-foreground block mb-1">Revenue</span>
+                  <p className="text-foreground font-medium">{call.dataCollection.revenue}</p>
+                </Card>
+              )}
+              {call.dataCollection.region && (
+                <Card className="p-4 bg-secondary/50 border-border">
+                  <span className="text-sm text-muted-foreground block mb-1">Region</span>
+                  <p className="text-foreground font-medium">{call.dataCollection.region}</p>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">Transcript</h2>
           <div className="bg-secondary/30 rounded-lg p-6 space-y-4 max-h-96 overflow-y-auto">

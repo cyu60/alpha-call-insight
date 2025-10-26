@@ -1,3 +1,11 @@
+export interface DataCollection {
+  profile?: string;
+  revenue?: string;
+  stage?: string;
+  region?: string;
+  name?: string;
+}
+
 export interface Call {
   id: string;
   title: string;
@@ -11,6 +19,7 @@ export interface Call {
     keyTopics: number;
     decisions: number;
   };
+  dataCollection?: DataCollection;
   transcript: TranscriptLine[];
 }
 
