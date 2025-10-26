@@ -25,6 +25,11 @@ interface ElevenLabsConversation {
       result: boolean;
       reason?: string;
     }>;
+    data_collection_results?: Record<string, {
+      data_collection_id: string;
+      value: string | null;
+      rationale?: string;
+    }>;
   };
 }
 
@@ -80,11 +85,12 @@ export const useConversations = () => {
 
     const transcript = parseTranscript(conv.transcript || []);
     const summary = generateSummary(transcript, conv.call_summary_title);
+    const dataCollection = extractDataCollection(conv.analysis?.data_collection_results);
 
     return {
       id: conv.conversation_id,
       title: conv.call_summary_title || 'Investor Call',
-      participant: conv.agent_name || 'AI Agent',
+      participant: dataCollection.name || conv.agent_name || 'AI Agent',
       date: date.toISOString().split('T')[0],
       duration: conv.call_duration_secs,
       sentiment,
@@ -94,7 +100,20 @@ export const useConversations = () => {
         keyTopics: countKeyTopics(transcript),
         decisions: countDecisions(conv.analysis?.evaluation_criteria_results),
       },
+      dataCollection,
       transcript,
+    };
+  };
+
+  const extractDataCollection = (results?: Record<string, any>) => {
+    if (!results) return {};
+    
+    return {
+      profile: results.Profile?.value || undefined,
+      revenue: results.Revenue?.value || undefined,
+      stage: results.Stage?.value || undefined,
+      region: results.Region?.value || undefined,
+      name: results.name?.value || undefined,
     };
   };
 
