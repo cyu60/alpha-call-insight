@@ -47,11 +47,56 @@ export const useConversations = () => {
       setLoading(true);
       setError(null);
 
+      // First, try to fetch from database
+      const { data: dbData, error: dbError } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          data_collection(*),
+          call_metrics(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+      }
+
+      if (dbData && dbData.length > 0) {
+        // Transform database data to Call format
+        const transformedCalls: Call[] = dbData.map((conv: any) => ({
+          id: conv.conversation_id,
+          title: conv.title,
+          participant: conv.participant,
+          date: new Date(conv.created_at).toISOString().split('T')[0],
+          duration: conv.duration,
+          sentiment: conv.sentiment as 'positive' | 'neutral' | 'negative',
+          summary: conv.summary,
+          keyMetrics: {
+            actionItems: conv.call_metrics?.[0]?.action_items || 0,
+            keyTopics: 0,
+            decisions: 0,
+          },
+          dataCollection: {
+            name: conv.data_collection?.[0]?.name,
+            profile: conv.data_collection?.[0]?.profile,
+            stage: conv.data_collection?.[0]?.stage,
+            revenue: conv.data_collection?.[0]?.revenue,
+            region: conv.data_collection?.[0]?.region,
+          },
+          transcript: [],
+        }));
+        setCalls(transformedCalls);
+      }
+
+      // Also fetch fresh data from ElevenLabs API to update database
       const { data, error: fnError } = await supabase.functions.invoke('fetch-conversations');
 
-      if (fnError) throw fnError;
-
-      if (data?.conversations) {
+      if (fnError) {
+        console.error('Edge function error:', fnError);
+        if (!dbData || dbData.length === 0) {
+          throw fnError;
+        }
+      } else if (data?.conversations) {
         const transformedCalls: Call[] = data.conversations.map((conv: ElevenLabsConversation) => 
           transformConversation(conv)
         );
