@@ -1,1 +1,4 @@
 project_id = "zvhpznbzwfkubojyvyde"
+
+[functions.fetch-conversations]
+verify_jwt = false
