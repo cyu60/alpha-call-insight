@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,14 @@ export const CallDetail = ({ call, onBack }: CallDetailProps) => {
   const [analysisResult, setAnalysisResult] = useState<DueDiligenceResult | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+  // Load existing analysis from metadata if available
+  useEffect(() => {
+    if (call.metadata && (call.metadata as any).ai_analysis) {
+      console.log('Loading existing analysis from metadata');
+      setAnalysisResult((call.metadata as any).ai_analysis);
+    }
+  }, [call.metadata]);
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -78,7 +86,10 @@ export const CallDetail = ({ call, onBack }: CallDetailProps) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ transcript: transcriptText }),
+        body: JSON.stringify({ 
+          conversation_id: call.id,
+          transcript: transcriptText 
+        }),
       });
 
       if (!response.ok) {
@@ -87,7 +98,8 @@ export const CallDetail = ({ call, onBack }: CallDetailProps) => {
       }
 
       const result = await response.json();
-      setAnalysisResult(result);
+      // Extract the analysis from the API response
+      setAnalysisResult(result.analysis || result);
     } catch (error) {
       console.error('Analysis error:', error);
       setAnalysisError(error instanceof Error ? error.message : 'Unknown error occurred');
