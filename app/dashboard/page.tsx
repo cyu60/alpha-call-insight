@@ -1,7 +1,12 @@
-import { Dashboard } from "@/components/Dashboard";
-import alphaLogo from "@/assets/alpha-logo.png";
+'use client'
 
-const Index = () => {
+import { Dashboard } from "@/components/Dashboard"
+import alphaLogo from "@/assets/alpha-logo.png"
+
+// Disable static generation for this page since it requires runtime data
+export const dynamic = 'force-dynamic'
+
+export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
@@ -10,18 +15,16 @@ const Index = () => {
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={alphaLogo} alt="Alpha" className="h-10" />
+                <img src={alphaLogo.src} alt="Alpha" className="h-10" />
               </div>
             </div>
           </div>
         </header>
-        
+
         <main className="container mx-auto px-6 py-8">
           <Dashboard />
         </main>
       </div>
     </div>
-  );
-};
-
-export default Index;
+  )
+}
