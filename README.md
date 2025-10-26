@@ -1,72 +1,140 @@
-# Welcome to your Lovable project
+# AlphaFoundry — AI Call Analytics & Due Diligence
 
-## Project info
+AI‑assisted pipeline for ingesting investor conversations, surfacing insights, and running automated due‑diligence using multi‑agent analysis plus an MCP‑powered verification step.
 
-**URL**: https://lovable.dev/projects/449d6ae0-e87a-4733-aed9-73ecca2bc4d0
+## Highlights
+- Next.js 16 + React 18 + TypeScript, Tailwind CSS, shadcn‑ui
+- Dashboard to browse investor conversations and transcripts
+- Supabase for storage and Edge Functions to sync ElevenLabs ConvAI conversations
+- Multi‑agent analysis (Quantitative, Qualitative, Strategic) via Anthropic Claude
+- Verification agent (via MCP server) uses Google Custom Search to validate founder claims
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/449d6ae0-e87a-4733-aed9-73ecca2bc4d0) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Project structure
+```
+/app                 # Next.js app router
+  /api/analyze-call  # POST endpoint to run due‑diligence
+  /dashboard         # Dashboard UI
+  /services          # AI analysis + verification agent
+/src
+  /components        # UI components (Dashboard, CallDetail, etc.)
+  /hooks             # data fetching / transforms
+  /integrations      # supabase client & types
+  /types             # app types (Call, Transcript)
+/supabase
+  /functions         # Edge Functions (fetch-conversations, update-conversation-metadata)
+  /migrations        # SQL migrations (metadata, transcript, triggers)
+/mcp-server          # MCP server exposing web_search tool
 ```
 
-**Edit a file directly in GitHub**
+## Getting started
+### Prerequisites
+- Node.js 18+ (Node 20 recommended)
+- npm (or pnpm/yarn)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Install
+```bash
+npm install
+```
 
-**Use GitHub Codespaces**
+### Environment variables
+Create a `.env.local` in the repo root:
+```bash
+# Frontend / API
+ANTHROPIC_API_KEY=sk-ant-...
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_ANON_KEY
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# MCP verification (Google Programmable Search)
+GOOGLE_SEARCH_API_KEY=your_google_api_key
+GOOGLE_SEARCH_ENGINE_ID=your_cx_id
+```
 
-## What technologies are used for this project?
+Supabase Edge Functions run on Supabase and need their own secrets (set via Supabase CLI or Dashboard):
+```bash
+# For fetch-conversations
+ELEVENLABS_API_KEY=your_elevenlabs_key
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+```
 
-This project is built with:
+### Run the app
+```bash
+npm run dev
+# http://localhost:3000
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Data flow
+1) The dashboard invokes the Supabase Edge Function `fetch-conversations` to pull latest ElevenLabs ConvAI conversations, upserting into tables like `conversations`, `data_collection`, and `call_metrics`.
+2) The page then queries Supabase to render calls, metrics, metadata, and transcripts.
+3) From a call detail view, clicking “Run Due Diligence” posts the transcript to `/api/analyze-call`.
+4) The API runs three Anthropic agents (Quantitative, Qualitative, Strategic) in parallel, then runs a Verification agent which spawns the MCP server and uses Google search to verify claims. Final decision is ACCEPT only if all four agents PASS.
 
-## How can I deploy this project?
+## API
+### POST `/api/analyze-call`
+Request:
+```json
+{ "transcript": "Caller (00:01): ...\nGary Tan AI (00:04): ..." }
+```
+Response (shape):
+```json
+{
+  "quantitativeAnalysis": { "verdict": "PASS", "revenue": 22000, ... },
+  "qualitativeAnalysis": { "verdict": "PASS", ... },
+  "strategicAnalysis": { "verdict": "FAIL", ... },
+  "verificationAnalysis": { "verdict": "PASS", "verified": true, ... },
+  "accept": false
+}
+```
 
-Simply open [Lovable](https://lovable.dev/projects/449d6ae0-e87a-4733-aed9-73ecca2bc4d0) and click on Share -> Publish.
+## Supabase Edge Functions
+- `fetch-conversations`: pulls ElevenLabs ConvAI conversations, saves transcript, basic metrics, and data collection fields into Supabase.
+- `update-conversation-metadata`: merges arbitrary `metadata` (JSONB) onto a conversation row.
 
-## Can I connect a custom domain to my Lovable project?
+Migrations live in `supabase/migrations` and include:
+- `metadata` JSONB column + GIN index on `conversations`
+- `transcript` JSONB column on `conversations`
+- updated trigger function for `updated_at`
 
-Yes, you can!
+Deploy functions from the repo root (example):
+```bash
+# Using Supabase CLI (logged in and linked)
+supabase functions deploy fetch-conversations
+supabase functions deploy update-conversation-metadata
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## MCP verification server
+Location: `mcp-server/`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Provides a `web_search` tool over stdio. The app spawns it via `npx tsx mcp-server/index.ts` during verification. Ensure Google API env vars are available in the app process (see `.env.local`).
+
+Local test:
+```bash
+cd mcp-server
+npm install
+npx tsx test-web-search.ts
+```
+
+## Scripts
+```json
+{
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint"
+}
+```
+
+## Tests / examples
+- `tsx test-aiservice.ts` — end‑to‑end run of the multi‑agent analysis
+- `tsx test-verification-pass.ts` — verification PASS case
+- `tsx test-verification-fraud.ts` — verification FAIL case (catches inconsistent claims)
+
+Run with required env in `.env.local`.
+
+## Troubleshooting
+- Analysis fails: check `ANTHROPIC_API_KEY` and model access, and that the transcript string is provided.
+- Verification returns low confidence or errors: ensure `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID` are set; confirm outbound network allowed.
+- Dashboard shows no conversations: verify `ELEVENLABS_API_KEY`, Supabase function deployment, and that your Supabase URL/keys are correct.
+
+## License
+Proprietary. All rights reserved unless a license is added.
