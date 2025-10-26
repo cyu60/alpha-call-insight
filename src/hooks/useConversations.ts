@@ -96,7 +96,7 @@ export const useConversations = () => {
               id: conv.conversation_id,
               title: conv.title,
               participant: conv.participant,
-              date: new Date(conv.created_at).toISOString().split("T")[0],
+              date: new Date(conv.created_at as string | number).toISOString().split("T")[0],
               duration: conv.duration,
               sentiment: conv.sentiment as "positive" | "neutral" | "negative",
               summary: conv.summary,
@@ -180,11 +180,11 @@ export const useConversations = () => {
     if (!results) return {};
 
     return {
-      profile: results.Profile?.value || undefined,
-      revenue: results.Revenue?.value || undefined,
-      stage: results.Stage?.value || undefined,
-      region: results.Region?.value || undefined,
-      name: results.name?.value || undefined,
+      profile: (results.Profile as { value?: string })?.value || undefined,
+      revenue: (results.Revenue as { value?: string })?.value || undefined,
+      stage: (results.Stage as { value?: string })?.value || undefined,
+      region: (results.Region as { value?: string })?.value || undefined,
+      name: (results.name as { value?: string })?.value || undefined,
     };
   };
 
