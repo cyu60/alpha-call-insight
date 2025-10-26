@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Loader2 } from "lucide-react";
 import { CallCard } from "./CallCard";
 import { CallDetail } from "./CallDetail";
+import { RecentCallCard } from "./RecentCallCard";
 import { Call } from "@/types/call";
 import { useConversations } from "@/hooks/useConversations";
 
@@ -20,6 +21,9 @@ export const Dashboard = () => {
     return <CallDetail call={selectedCall} onBack={() => setSelectedCall(null)} />;
   }
 
+  // Get the most recent call (first in the sorted array)
+  const mostRecentCall = calls.length > 0 ? calls[0] : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -32,6 +36,14 @@ export const Dashboard = () => {
           </p>
         </div>
       </div>
+
+      {/* Most Recent Call Card - shown above search */}
+      {!loading && mostRecentCall && (
+        <RecentCallCard
+          call={mostRecentCall}
+          onClick={() => setSelectedCall(mostRecentCall)}
+        />
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

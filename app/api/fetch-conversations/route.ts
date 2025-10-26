@@ -256,7 +256,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ conversations: detailedConversations });
+    // After syncing, fetch all conversations from database with related data
+    console.log("Fetching synced conversations from database...");
+
+    // Fetch conversations
+    const { data: conversations, error: fetchError } = await supabase
+      .from("conversations")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (fetchError) {
+      console.error("Error fetching synced conversations:", fetchError);
+      throw fetchError;
+    }
+
+    // Manually fetch related data for each conversation
+    const conversationsWithData = await Promise.all(
+      (conversations || []).map(async (conv) => {
+        // Fetch data_collection
+        const { data: dataCollection } = await supabase
+          .from("data_collection")
+          .select("*")
+          .eq("conversation_id", conv.id)
+          .maybeSingle();
+
+        // Fetch call_metrics
+        const { data: callMetrics } = await supabase
+          .from("call_metrics")
+          .select("*")
+          .eq("conversation_id", conv.id)
+          .maybeSingle();
+
+        return {
+          ...conv,
+          data_collection: dataCollection ? [dataCollection] : [],
+          call_metrics: callMetrics ? [callMetrics] : [],
+        };
+      })
+    );
+
+    console.log(
+      `Returning ${conversationsWithData.length} conversations from database`
+    );
+
+    return NextResponse.json({ conversations: conversationsWithData });
   } catch (error) {
     console.error("Error in fetch-conversations API:", error);
     return NextResponse.json(

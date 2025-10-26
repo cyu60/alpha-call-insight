@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Call } from "@/types/call";
 
 interface ElevenLabsMessage {
@@ -20,7 +19,7 @@ interface ElevenLabsConversation {
   call_successful: string;
   direction: string;
   transcript?: ElevenLabsMessage[];
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   analysis?: {
     evaluation_criteria_results?: Record<
       string,
@@ -54,86 +53,70 @@ export const useConversations = () => {
       setLoading(true);
       setError(null);
 
-      // First, fetch fresh data from ElevenLabs API to sync database
-      console.log("Fetching from ElevenLabs API...");
-      const apiResponse = await fetch("/api/fetch-conversations");
+      // Call the fetch-conversations API endpoint
+      // This endpoint fetches from ElevenLabs, syncs to database, and returns conversations
+      console.log("Fetching conversations from API endpoint...");
+      const response = await fetch("/api/fetch-conversations");
 
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch conversations");
       }
 
-      const apiData = await apiResponse.json();
-
-      // Optimistically render from API while DB sync completes
-      if (apiData?.conversations) {
-        const fromApi: Call[] = apiData.conversations.map(
-          (conv: ElevenLabsConversation) => transformConversation(conv)
-        );
-        setCalls(fromApi);
-      }
-
-      // Now fetch from database with all the synced data
-      console.log("Fetching from database...");
-      const { data: dbData, error: dbError } = await supabase
-        .from("conversations")
-        .select(
-          `
-          *
-        `
-        )
-        .order("created_at", { ascending: false });
-
-      if (dbError) {
-        console.error("Database error:", dbError);
-        throw dbError;
-      }
+      const apiData = await response.json();
+      const dbData = apiData.conversations || [];
 
       if (dbData && dbData.length > 0) {
         // Transform database data to Call format
-        const transformedCalls: Call[] = dbData.map((conv: any) => {
-          console.log(
-            "Processing conversation:",
-            conv.conversation_id,
-            "with metadata:",
-            conv.metadata
-          );
+        const transformedCalls: Call[] = dbData.map(
+          (conv: Record<string, unknown>) => {
+            console.log(
+              "Processing conversation:",
+              conv.conversation_id,
+              "with metadata:",
+              conv.metadata
+            );
 
-          // Parse transcript from JSONB
-          const transcript = Array.isArray(conv.transcript)
-            ? conv.transcript.map((msg: any, index: number) => ({
-                speaker: msg.role === "user" ? "Caller" : "Gary Tan AI",
-                timestamp: formatTimestamp(msg.time_in_call_secs || index * 30),
-                text: msg.message,
-              }))
-            : [];
+            // Parse transcript from JSONB
+            const transcript = Array.isArray(conv.transcript)
+              ? conv.transcript.map(
+                  (msg: ElevenLabsMessage, index: number) => ({
+                    speaker: msg.role === "user" ? "Caller" : "Gary Tan AI",
+                    timestamp: formatTimestamp(
+                      msg.time_in_call_secs || index * 30
+                    ),
+                    text: msg.message,
+                  })
+                )
+              : [];
 
-          console.log("Transcript length:", transcript.length);
+            console.log("Transcript length:", transcript.length);
 
-          return {
-            id: conv.conversation_id,
-            title: conv.title,
-            participant: conv.participant,
-            date: new Date(conv.created_at).toISOString().split("T")[0],
-            duration: conv.duration,
-            sentiment: conv.sentiment as "positive" | "neutral" | "negative",
-            summary: conv.summary,
-            keyMetrics: {
-              actionItems: conv.call_metrics?.[0]?.action_items || 0,
-              keyTopics: 0,
-              decisions: 0,
-            },
-            dataCollection: {
-              name: conv.data_collection?.[0]?.name,
-              profile: conv.data_collection?.[0]?.profile,
-              stage: conv.data_collection?.[0]?.stage,
-              revenue: conv.data_collection?.[0]?.revenue,
-              region: conv.data_collection?.[0]?.region,
-            },
-            metadata: conv.metadata || undefined,
-            transcript,
-          };
-        });
+            return {
+              id: conv.conversation_id,
+              title: conv.title,
+              participant: conv.participant,
+              date: new Date(conv.created_at).toISOString().split("T")[0],
+              duration: conv.duration,
+              sentiment: conv.sentiment as "positive" | "neutral" | "negative",
+              summary: conv.summary,
+              keyMetrics: {
+                actionItems: conv.call_metrics?.[0]?.action_items || 0,
+                keyTopics: 0,
+                decisions: 0,
+              },
+              dataCollection: {
+                name: conv.data_collection?.[0]?.name,
+                profile: conv.data_collection?.[0]?.profile,
+                stage: conv.data_collection?.[0]?.stage,
+                revenue: conv.data_collection?.[0]?.revenue,
+                region: conv.data_collection?.[0]?.region,
+              },
+              metadata: conv.metadata || undefined,
+              transcript,
+            };
+          }
+        );
 
         console.log("Setting calls:", transformedCalls.length);
         setCalls(transformedCalls);
@@ -193,7 +176,7 @@ export const useConversations = () => {
     };
   };
 
-  const extractDataCollection = (results?: Record<string, any>) => {
+  const extractDataCollection = (results?: Record<string, unknown>) => {
     if (!results) return {};
 
     return {
@@ -221,7 +204,10 @@ export const useConversations = () => {
       .padStart(2, "0")}`;
   };
 
-  const generateSummary = (transcript: any[], title?: string): string => {
+  const generateSummary = (
+    transcript: { speaker: string; timestamp: string; text: string }[],
+    title?: string
+  ): string => {
     if (!transcript.length) return title || "No summary available";
 
     const userMessages = transcript.filter((t) => t.speaker === "Caller");
@@ -234,7 +220,7 @@ export const useConversations = () => {
     );
   };
 
-  const countActionItems = (transcript: any[]): number => {
+  const countActionItems = (transcript: { text: string }[]): number => {
     const actionWords = [
       "will",
       "should",
@@ -252,7 +238,7 @@ export const useConversations = () => {
     ).length;
   };
 
-  const countKeyTopics = (transcript: any[]): number => {
+  const countKeyTopics = (transcript: { text: string }[]): number => {
     const topics = new Set<string>();
     const topicWords = [
       "market",
