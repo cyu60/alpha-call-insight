@@ -16,6 +16,8 @@ dist-ssr
 .next/
 next-env.d.ts
 
+.env
+
 # Vite backup
 .vite-backup/
 
