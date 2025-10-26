@@ -135,6 +135,7 @@ serve(async (req) => {
             stage: dcResults.Stage?.value || null,
             revenue: dcResults.Revenue?.value || null,
             region: dcResults.Region?.value || null,
+            analysis: conv.analysis || {},
           };
 
           const { error: delDcErr } = await supabase
