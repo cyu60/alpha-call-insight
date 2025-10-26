@@ -9,7 +9,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-orange-100">
         <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-gradient-to-br from-orange-500 to-amber-500" />
+            <img src="/favicon.png" alt="Alpha" className="h-8" />
             <span className="font-semibold tracking-tight">AlphaFoundry</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
@@ -208,7 +208,7 @@ export default function LandingPage() {
       <footer className="py-10 border-t border-slate-200">
         <div className="mx-auto max-w-7xl px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-orange-500 to-amber-500" />
+            <img src="/favicon.png" alt="Alpha" className="h-6" />
             <span className="text-sm">© {new Date().getFullYear()} AlphaFoundry</span>
           </div>
           <div className="text-sm text-slate-500">Built for thesis‑driven funds</div>
