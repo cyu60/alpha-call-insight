@@ -3,6 +3,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { spawn } from 'child_process';
 import path from 'path';
+import { createSupabaseClient } from '../../lib/server';
+
 
 export interface VerificationResult {
   verified: boolean;
@@ -19,7 +21,7 @@ interface FounderInfo {
   school?: string;
   pedigree?: string;
   social_capital?: string;
-}
+}  
 
 /**
  * Verification Agent - Uses MCP server to autonomously verify founder claims
@@ -124,7 +126,7 @@ Return ONLY a JSON object with:
 
     console.log('🤖 Calling Claude with MCP tool access...');
     
-    let messages: Anthropic.MessageParam[] = [
+    const messages: Anthropic.MessageParam[] = [
       { role: 'user', content: verificationPrompt }
     ];
 
