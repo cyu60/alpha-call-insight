@@ -65,29 +65,40 @@ export const useConversations = () => {
 
       if (dbData && dbData.length > 0) {
         // Transform database data to Call format
-        const transformedCalls: Call[] = dbData.map((conv: any) => ({
-          id: conv.conversation_id,
-          title: conv.title,
-          participant: conv.participant,
-          date: new Date(conv.created_at).toISOString().split('T')[0],
-          duration: conv.duration,
-          sentiment: conv.sentiment as 'positive' | 'neutral' | 'negative',
-          summary: conv.summary,
-          keyMetrics: {
-            actionItems: conv.call_metrics?.[0]?.action_items || 0,
-            keyTopics: 0,
-            decisions: 0,
-          },
-          dataCollection: {
-            name: conv.data_collection?.[0]?.name,
-            profile: conv.data_collection?.[0]?.profile,
-            stage: conv.data_collection?.[0]?.stage,
-            revenue: conv.data_collection?.[0]?.revenue,
-            region: conv.data_collection?.[0]?.region,
-          },
-          metadata: conv.metadata || undefined,
-          transcript: [],
-        }));
+        const transformedCalls: Call[] = dbData.map((conv: any) => {
+          // Parse transcript from JSONB
+          const transcript = Array.isArray(conv.transcript) 
+            ? conv.transcript.map((msg: any, index: number) => ({
+                speaker: msg.role === 'user' ? 'Caller' : 'Gary Tan AI',
+                timestamp: formatTimestamp(msg.time_in_call_secs || index * 30),
+                text: msg.message,
+              }))
+            : [];
+
+          return {
+            id: conv.conversation_id,
+            title: conv.title,
+            participant: conv.participant,
+            date: new Date(conv.created_at).toISOString().split('T')[0],
+            duration: conv.duration,
+            sentiment: conv.sentiment as 'positive' | 'neutral' | 'negative',
+            summary: conv.summary,
+            keyMetrics: {
+              actionItems: conv.call_metrics?.[0]?.action_items || 0,
+              keyTopics: 0,
+              decisions: 0,
+            },
+            dataCollection: {
+              name: conv.data_collection?.[0]?.name,
+              profile: conv.data_collection?.[0]?.profile,
+              stage: conv.data_collection?.[0]?.stage,
+              revenue: conv.data_collection?.[0]?.revenue,
+              region: conv.data_collection?.[0]?.region,
+            },
+            metadata: conv.metadata || undefined,
+            transcript,
+          };
+        });
         setCalls(transformedCalls);
       } else {
         setCalls([]);
