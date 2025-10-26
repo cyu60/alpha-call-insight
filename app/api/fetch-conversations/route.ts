@@ -258,15 +258,11 @@ export async function GET(request: NextRequest) {
 
     // After syncing, fetch all conversations from database with related data
     console.log("Fetching synced conversations from database...");
-    const { data: syncedConversations, error: fetchError } = await supabase
+
+    // Fetch conversations
+    const { data: conversations, error: fetchError } = await supabase
       .from("conversations")
-      .select(
-        `
-        *,
-        data_collection(*),
-        call_metrics(*)
-      `
-      )
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (fetchError) {
@@ -274,13 +270,36 @@ export async function GET(request: NextRequest) {
       throw fetchError;
     }
 
-    console.log(
-      `Returning ${
-        syncedConversations?.length || 0
-      } conversations from database`
+    // Manually fetch related data for each conversation
+    const conversationsWithData = await Promise.all(
+      (conversations || []).map(async (conv) => {
+        // Fetch data_collection
+        const { data: dataCollection } = await supabase
+          .from("data_collection")
+          .select("*")
+          .eq("conversation_id", conv.id)
+          .maybeSingle();
+
+        // Fetch call_metrics
+        const { data: callMetrics } = await supabase
+          .from("call_metrics")
+          .select("*")
+          .eq("conversation_id", conv.id)
+          .maybeSingle();
+
+        return {
+          ...conv,
+          data_collection: dataCollection ? [dataCollection] : [],
+          call_metrics: callMetrics ? [callMetrics] : [],
+        };
+      })
     );
 
-    return NextResponse.json({ conversations: syncedConversations || [] });
+    console.log(
+      `Returning ${conversationsWithData.length} conversations from database`
+    );
+
+    return NextResponse.json({ conversations: conversationsWithData });
   } catch (error) {
     console.error("Error in fetch-conversations API:", error);
     return NextResponse.json(

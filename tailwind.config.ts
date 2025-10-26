@@ -55,6 +55,7 @@ export default {
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
+        'glow-lg': 'var(--shadow-glow-lg)',
         'card': 'var(--shadow-card)',
       },
       transitionTimingFunction: {
