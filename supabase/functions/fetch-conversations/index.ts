@@ -128,32 +128,46 @@ serve(async (req) => {
         // Save data collection if available
         if (conv.analysis?.data_collection_results) {
           const dcResults = conv.analysis.data_collection_results;
-          await supabase
+          const dcPayload = {
+            conversation_id: conversationData.id,
+            name: dcResults.name?.value || null,
+            profile: dcResults.Profile?.value || null,
+            stage: dcResults.Stage?.value || null,
+            revenue: dcResults.Revenue?.value || null,
+            region: dcResults.Region?.value || null,
+          };
+
+          const { error: delDcErr } = await supabase
             .from('data_collection')
-            .upsert({
-              conversation_id: conversationData.id,
-              name: dcResults.name?.value || null,
-              profile: dcResults.Profile?.value || null,
-              stage: dcResults.Stage?.value || null,
-              revenue: dcResults.Revenue?.value || null,
-              region: dcResults.Region?.value || null,
-            }, {
-              onConflict: 'conversation_id'
-            });
+            .delete()
+            .eq('conversation_id', conversationData.id);
+          if (delDcErr) console.error('Error clearing data_collection for', conversationData.id, delDcErr);
+
+          const { error: insDcErr } = await supabase
+            .from('data_collection')
+            .insert(dcPayload);
+          if (insDcErr) console.error('Error inserting data_collection for', conversationData.id, insDcErr);
         }
 
         // Save metrics
         const actionItems = countActionItems(conv.transcript || []);
-        await supabase
+        const metricsPayload = {
+          conversation_id: conversationData.id,
+          action_items: actionItems,
+          questions: 0,
+          transcript_length: conv.transcript?.length || 0,
+        };
+
+        const { error: delMetricsErr } = await supabase
           .from('call_metrics')
-          .upsert({
-            conversation_id: conversationData.id,
-            action_items: actionItems,
-            questions: 0,
-            transcript_length: conv.transcript?.length || 0,
-          }, {
-            onConflict: 'conversation_id'
-          });
+          .delete()
+          .eq('conversation_id', conversationData.id);
+        if (delMetricsErr) console.error('Error clearing call_metrics for', conversationData.id, delMetricsErr);
+
+        const { error: insMetricsErr } = await supabase
+          .from('call_metrics')
+          .insert(metricsPayload);
+        if (insMetricsErr) console.error('Error inserting call_metrics for', conversationData.id, insMetricsErr);
 
       } catch (error) {
         console.error(`Exception saving conversation ${conv.conversation_id}:`, error);
