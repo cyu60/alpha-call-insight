@@ -14,7 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      call_metrics: {
+        Row: {
+          action_items: number | null
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          questions: number | null
+          transcript_length: number | null
+        }
+        Insert: {
+          action_items?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          questions?: number | null
+          transcript_length?: number | null
+        }
+        Update: {
+          action_items?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          questions?: number | null
+          transcript_length?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_metrics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          duration: number
+          id: string
+          participant: string
+          sentiment: string
+          summary: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          duration: number
+          id?: string
+          participant: string
+          sentiment: string
+          summary?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          duration?: number
+          id?: string
+          participant?: string
+          sentiment?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      data_collection: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          name: string | null
+          profile: string | null
+          region: string | null
+          revenue: string | null
+          stage: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          profile?: string | null
+          region?: string | null
+          revenue?: string | null
+          stage?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          profile?: string | null
+          region?: string | null
+          revenue?: string | null
+          stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_collection_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
