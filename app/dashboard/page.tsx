@@ -1,6 +1,11 @@
-import { Dashboard } from "@/components/Dashboard";
+'use client'
 
-const Index = () => {
+import { Dashboard } from "@/components/Dashboard"
+
+// Disable static generation for this page since it requires runtime data
+export const dynamic = 'force-dynamic'
+
+export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="fixed inset-0 bg-gradient-glow pointer-events-none" />
@@ -17,13 +22,11 @@ const Index = () => {
             </div>
           </div>
         </header>
-        
+
         <main className="container mx-auto px-6 py-8">
           <Dashboard />
         </main>
       </div>
     </div>
-  );
-};
-
-export default Index;
+  )
+}
