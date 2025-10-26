@@ -93,26 +93,26 @@ export const useConversations = () => {
             console.log("Transcript length:", transcript.length);
 
             return {
-              id: conv.conversation_id,
-              title: conv.title,
-              participant: conv.participant,
-              date: new Date(conv.created_at).toISOString().split("T")[0],
-              duration: conv.duration,
-              sentiment: conv.sentiment as "positive" | "neutral" | "negative",
-              summary: conv.summary,
+              id: String(conv.conversation_id),
+              title: String(conv.title || "Investor Call"),
+              participant: String(conv.participant || "Unknown"),
+              date: new Date(String(conv.created_at)).toISOString().split("T")[0],
+              duration: Number(conv.duration) || 0,
+              sentiment: (conv.sentiment as "positive" | "neutral" | "negative") || "neutral",
+              summary: String(conv.summary || "No summary available"),
               keyMetrics: {
-                actionItems: conv.call_metrics?.[0]?.action_items || 0,
+                actionItems: Number((conv.call_metrics as any)?.[0]?.action_items) || 0,
                 keyTopics: 0,
                 decisions: 0,
               },
               dataCollection: {
-                name: conv.data_collection?.[0]?.name,
-                profile: conv.data_collection?.[0]?.profile,
-                stage: conv.data_collection?.[0]?.stage,
-                revenue: conv.data_collection?.[0]?.revenue,
-                region: conv.data_collection?.[0]?.region,
+                name: (conv.data_collection as any)?.[0]?.name,
+                profile: (conv.data_collection as any)?.[0]?.profile,
+                stage: (conv.data_collection as any)?.[0]?.stage,
+                revenue: (conv.data_collection as any)?.[0]?.revenue,
+                region: (conv.data_collection as any)?.[0]?.region,
               },
-              metadata: conv.metadata || undefined,
+              metadata: (conv.metadata as Record<string, unknown>) || undefined,
               transcript,
             };
           }
