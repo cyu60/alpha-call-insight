@@ -15,7 +15,7 @@ export default function DashboardPage() {
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={alphaLogo} alt="Alpha" className="h-10" />
+                <img src={alphaLogo.src} alt="Alpha" className="h-10" />
               </div>
             </div>
           </div>
