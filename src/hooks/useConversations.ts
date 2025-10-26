@@ -79,9 +79,7 @@ export const useConversations = () => {
         .from("conversations")
         .select(
           `
-          *,
-          data_collection(*),
-          call_metrics(*)
+          *
         `
         )
         .order("created_at", { ascending: false });
