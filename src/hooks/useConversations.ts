@@ -20,6 +20,7 @@ interface ElevenLabsConversation {
   call_successful: string;
   direction: string;
   transcript?: ElevenLabsMessage[];
+  metadata?: any;
   analysis?: {
     evaluation_criteria_results?: Record<string, {
       result: boolean;
@@ -83,6 +84,7 @@ export const useConversations = () => {
             revenue: conv.data_collection?.[0]?.revenue,
             region: conv.data_collection?.[0]?.region,
           },
+          metadata: conv.metadata || undefined,
           transcript: [],
         }));
         setCalls(transformedCalls);
@@ -146,6 +148,7 @@ export const useConversations = () => {
         decisions: countDecisions(conv.analysis?.evaluation_criteria_results),
       },
       dataCollection,
+      metadata: conv.metadata || undefined,
       transcript,
     };
   };

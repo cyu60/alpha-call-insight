@@ -1,3 +1,16 @@
+export interface UserEnrichment {
+  company_name?: string | null;
+  context?: string | null;
+  industry?: string | null;
+}
+
+export interface ConversationMetadata {
+  follow_up_date?: string;
+  lead_score?: number;
+  updated_at?: string;
+  user_enrichment?: UserEnrichment;
+}
+
 export interface DataCollection {
   profile?: string;
   revenue?: string;
@@ -20,6 +33,7 @@ export interface Call {
     decisions: number;
   };
   dataCollection?: DataCollection;
+  metadata?: ConversationMetadata;
   transcript: TranscriptLine[];
 }
 
