@@ -17,26 +17,30 @@ serve(async (req) => {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }
 
-    console.log('Fetching conversations from ElevenLabs...');
+    console.log('Fetching Gary Tan AI conversations from ElevenLabs...');
 
-    const response = await fetch('https://api.elevenlabs.io/v1/convai/conversations', {
-      method: 'GET',
-      headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
-      },
-    });
+    // First, get list of conversations with pagination
+    const listResponse = await fetch(
+      'https://api.elevenlabs.io/v1/convai/conversations?page_size=100',
+      {
+        method: 'GET',
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+    if (!listResponse.ok) {
+      const errorText = await listResponse.text();
+      console.error('ElevenLabs list API error:', listResponse.status, errorText);
+      throw new Error(`ElevenLabs API error: ${listResponse.status}`);
     }
 
-    const data = await response.json();
-    console.log('Successfully fetched conversations list');
+    const listData = await listResponse.json();
+    console.log(`Fetched ${listData.conversations?.length || 0} total conversations`);
 
     // Filter for Gary Tan AI only
-    const garyConversations = data.conversations?.filter((conv: any) => 
+    const garyConversations = listData.conversations?.filter((conv: any) => 
       conv.agent_name === 'Gary Tan AI'
     ) || [];
 
@@ -46,6 +50,8 @@ serve(async (req) => {
     const detailedConversations = await Promise.all(
       garyConversations.map(async (conv: any) => {
         try {
+          console.log(`Fetching details for conversation ${conv.conversation_id}`);
+          
           const detailResponse = await fetch(
             `https://api.elevenlabs.io/v1/convai/conversations/${conv.conversation_id}`,
             {
@@ -58,17 +64,25 @@ serve(async (req) => {
 
           if (detailResponse.ok) {
             const details = await detailResponse.json();
-            return { ...conv, ...details };
+            console.log(`Successfully fetched details for ${conv.conversation_id}`);
+            return { 
+              ...conv, 
+              transcript: details.transcript,
+              metadata: details.metadata,
+              analysis: details.analysis
+            };
+          } else {
+            console.error(`Failed to fetch details for ${conv.conversation_id}: ${detailResponse.status}`);
+            return conv;
           }
-          return conv;
         } catch (error) {
-          console.error(`Failed to fetch details for ${conv.conversation_id}:`, error);
+          console.error(`Exception fetching details for ${conv.conversation_id}:`, error);
           return conv;
         }
       })
     );
 
-    console.log('Successfully fetched detailed conversations');
+    console.log(`Returning ${detailedConversations.length} detailed conversations`);
 
     return new Response(
       JSON.stringify({ conversations: detailedConversations }),
