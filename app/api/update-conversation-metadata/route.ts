@@ -13,10 +13,20 @@ export async function POST(request: NextRequest) {
     // Create Supabase client with service role key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Parse request body
-    const { conversation_id, metadata } = await request.json();
+    // Parse request body - supports both insert and update
+    const body = await request.json();
+    const {
+      conversation_id,
+      title,
+      participant,
+      duration,
+      sentiment,
+      summary,
+      transcript,
+      metadata,
+    } = body;
 
-    // Validate input
+    // Validate required fields
     if (!conversation_id) {
       return NextResponse.json(
         { error: "conversation_id is required" },
@@ -24,59 +34,102 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!metadata || typeof metadata !== "object") {
-      return NextResponse.json(
-        { error: "metadata must be a valid object" },
-        { status: 400 }
-      );
-    }
+    console.log(`Processing conversation data for: ${conversation_id}`);
 
-    console.log(`Updating metadata for conversation: ${conversation_id}`);
-
-    // Get existing conversation
-    const { data: existingConv, error: fetchError } = await supabase
+    // Check if conversation exists
+    const { data: existingConv } = await supabase
       .from("conversations")
-      .select("metadata")
+      .select("*")
       .eq("conversation_id", conversation_id)
       .single();
 
-    if (fetchError) {
-      console.error("Error fetching conversation:", fetchError);
-      return NextResponse.json(
-        { error: "Conversation not found" },
-        { status: 404 }
-      );
+    let result;
+
+    if (existingConv) {
+      // Update existing conversation
+      console.log(`Updating existing conversation: ${conversation_id}`);
+
+      // Prepare update payload (only include provided fields)
+      const updatePayload: Record<string, unknown> = {};
+
+      if (title !== undefined) updatePayload.title = title;
+      if (participant !== undefined) updatePayload.participant = participant;
+      if (duration !== undefined) updatePayload.duration = duration;
+      if (sentiment !== undefined) updatePayload.sentiment = sentiment;
+      if (summary !== undefined) updatePayload.summary = summary;
+      if (transcript !== undefined) updatePayload.transcript = transcript;
+
+      // Merge metadata if provided
+      if (metadata !== undefined) {
+        updatePayload.metadata = {
+          ...(existingConv.metadata || {}),
+          ...metadata,
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("conversations")
+        .update(updatePayload)
+        .eq("conversation_id", conversation_id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating conversation:", error);
+        throw error;
+      }
+
+      result = data;
+    } else {
+      // Insert new conversation
+      console.log(`Creating new conversation: ${conversation_id}`);
+
+      // Validate required fields for insert
+      if (!title || !participant || duration === undefined || !sentiment) {
+        return NextResponse.json(
+          {
+            error:
+              "For new conversations, title, participant, duration, and sentiment are required",
+          },
+          { status: 400 }
+        );
+      }
+
+      const insertPayload = {
+        conversation_id,
+        title,
+        participant,
+        duration,
+        sentiment,
+        summary: summary || "",
+        transcript: transcript || [],
+        metadata: {
+          ...(metadata || {}),
+          created_at: new Date().toISOString(),
+        },
+      };
+
+      const { data, error } = await supabase
+        .from("conversations")
+        .insert(insertPayload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error inserting conversation:", error);
+        throw error;
+      }
+
+      result = data;
     }
 
-    // Merge existing metadata with new metadata
-    const updatedMetadata = {
-      ...(existingConv.metadata || {}),
-      ...metadata,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Update conversation with merged metadata
-    const { data, error } = await supabase
-      .from("conversations")
-      .update({ metadata: updatedMetadata })
-      .eq("conversation_id", conversation_id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating conversation:", error);
-      throw error;
-    }
-
-    console.log(
-      `Successfully updated metadata for conversation: ${conversation_id}`
-    );
+    console.log(`Successfully processed conversation: ${conversation_id}`);
 
     return NextResponse.json({
       success: true,
-      conversation_id,
-      metadata: updatedMetadata,
-      data,
+      action: existingConv ? "updated" : "created",
+      data: result,
     });
   } catch (error) {
     console.error("Error in update-conversation-metadata API:", error);
