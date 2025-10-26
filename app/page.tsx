@@ -37,9 +37,43 @@ export default function LandingPage() {
             <p className="mt-5 text-lg md:text-xl text-slate-600">
               We're building a YC/VC from the ground up using AI—autonomous sourcing, qualification, filtering, and vetting—so you capture <span className="font-semibold text-slate-800">alpha leads</span> before the market blinks.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-6 py-3 text-white font-semibold shadow-sm hover:bg-orange-700 transition">
-                Get started
+
+            {/* AI Pitch Line - Compact */}
+            <div className="mt-8 p-5 rounded-xl border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center text-white text-xl">
+                    📞
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-medium text-orange-700 mb-0.5">Try Our AI Pitch Line</p>
+                    <a 
+                      href="tel:+19786446817" 
+                      className="text-2xl font-bold text-slate-900 hover:text-orange-600 transition-colors"
+                    >
+                      (978) 644-6817
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                    </span>
+                    Live
+                  </span>
+                  <span>•</span>
+                  <span>4 AI Agents</span>
+                  <span>•</span>
+                  <span>Instant Analysis</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3 text-white font-semibold shadow-sm hover:bg-slate-800 transition">
+                View Dashboard
               </Link>
               <a href="#how" className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-6 py-3 font-semibold hover:border-slate-400">
                 See how it works
@@ -162,13 +196,42 @@ export default function LandingPage() {
       <section id="cta" className="py-24 bg-gradient-to-br from-orange-600 to-amber-600 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">Turn noise into alpha leads.</h2>
-          <p className="mt-4 text-lg text-orange-50">Pilot seats are limited. If you run a thesis‑driven fund and want unfair speed, let's talk.</p>
+          <p className="mt-4 text-lg text-orange-50">Experience the future of VC due diligence. Call our AI pitch line now.</p>
+          
+          {/* Phone Number CTA */}
+          <div className="mt-8 p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="text-center sm:text-left">
+                <p className="text-white/80 text-sm mb-1">🎤 Call Our AI Pitch Line</p>
+                <a 
+                  href="tel:+19786446817" 
+                  className="text-3xl md:text-4xl font-bold text-white hover:text-orange-100 transition-colors inline-block"
+                >
+                  (978) 644-6817
+                </a>
+              </div>
+              <div className="h-12 w-px bg-white/20 hidden sm:block"></div>
+              <div className="text-center sm:text-left">
+                <p className="text-white/90 text-base font-medium">
+                  Pitch → Get AI Analysis
+                </p>
+                <div className="mt-1 flex items-center gap-2 text-white/70 text-xs justify-center sm:justify-start">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"></span>
+                  </span>
+                  Live 24/7 • 4 AI Agents
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-orange-700 hover:bg-orange-50 transition">
-              Get started now
+              View Live Dashboard
             </Link>
           </div>
-          <p className="mt-3 text-sm text-orange-100">Start exploring your dealflow pipeline</p>
+          <p className="mt-3 text-sm text-orange-100">See analysis from recent calls</p>
         </div>
       </section>
 
