@@ -256,7 +256,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ conversations: detailedConversations });
+    // After syncing, fetch all conversations from database with related data
+    console.log("Fetching synced conversations from database...");
+    const { data: syncedConversations, error: fetchError } = await supabase
+      .from("conversations")
+      .select(
+        `
+        *,
+        data_collection(*),
+        call_metrics(*)
+      `
+      )
+      .order("created_at", { ascending: false });
+
+    if (fetchError) {
+      console.error("Error fetching synced conversations:", fetchError);
+      throw fetchError;
+    }
+
+    console.log(
+      `Returning ${
+        syncedConversations?.length || 0
+      } conversations from database`
+    );
+
+    return NextResponse.json({ conversations: syncedConversations || [] });
   } catch (error) {
     console.error("Error in fetch-conversations API:", error);
     return NextResponse.json(
