@@ -96,6 +96,10 @@ serve(async (req) => {
     // Save conversations to database
     for (const conv of detailedConversations) {
       try {
+        console.log(`Saving conversation ${conv.conversation_id}`);
+        console.log(`Transcript length: ${conv.transcript?.length || 0}`);
+        console.log(`Metadata:`, JSON.stringify(conv.metadata || {}));
+        
         // Upsert conversation with transcript and metadata
         const { data: conversationData, error: convError } = await supabase
           .from('conversations')
@@ -118,6 +122,8 @@ serve(async (req) => {
           console.error(`Error saving conversation ${conv.conversation_id}:`, convError);
           continue;
         }
+        
+        console.log(`Successfully saved conversation ${conv.conversation_id} to database`);
 
         // Save data collection if available
         if (conv.analysis?.data_collection_results) {
