@@ -214,21 +214,23 @@ export const useConversations = () => {
 
   const countActionItems = (transcript: any[]): number => {
     const actionWords = ['will', 'should', 'need to', 'must', 'todo', 'action', 'follow up', 'next step'];
-    return transcript.filter(t => 
-      actionWords.some(word => t.text.toLowerCase().includes(word))
+    return transcript.filter(t =>
+      t.text && actionWords.some(word => t.text.toLowerCase().includes(word))
     ).length;
   };
 
   const countKeyTopics = (transcript: any[]): number => {
     const topics = new Set<string>();
     const topicWords = ['market', 'product', 'revenue', 'growth', 'team', 'strategy', 'funding', 'traction', 'customer'];
-    
+
     transcript.forEach(t => {
-      topicWords.forEach(word => {
-        if (t.text.toLowerCase().includes(word)) topics.add(word);
-      });
+      if (t.text) {
+        topicWords.forEach(word => {
+          if (t.text.toLowerCase().includes(word)) topics.add(word);
+        });
+      }
     });
-    
+
     return topics.size;
   };
 
