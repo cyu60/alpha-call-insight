@@ -48,7 +48,7 @@ export const useConversations = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch from database
+      // First, fetch from database for quick display
       const { data: dbData, error: dbError } = await supabase
         .from('conversations')
         .select(`
@@ -60,7 +60,6 @@ export const useConversations = () => {
 
       if (dbError) {
         console.error('Database error:', dbError);
-        throw dbError;
       }
 
       if (dbData && dbData.length > 0) {
@@ -100,8 +99,63 @@ export const useConversations = () => {
           };
         });
         setCalls(transformedCalls);
+      }
+
+      // Fetch fresh data from ElevenLabs API to update database
+      const { error: fnError } = await supabase.functions.invoke('fetch-conversations');
+
+      if (fnError) {
+        console.error('Edge function error:', fnError);
+        if (!dbData || dbData.length === 0) {
+          throw fnError;
+        }
       } else {
-        setCalls([]);
+        // Reload from database after API sync
+        const { data: freshData } = await supabase
+          .from('conversations')
+          .select(`
+            *,
+            data_collection(*),
+            call_metrics(*)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (freshData && freshData.length > 0) {
+          const transformedCalls: Call[] = freshData.map((conv: any) => {
+            const transcript = Array.isArray(conv.transcript) 
+              ? conv.transcript.map((msg: any, index: number) => ({
+                  speaker: msg.role === 'user' ? 'Caller' : 'Gary Tan AI',
+                  timestamp: formatTimestamp(msg.time_in_call_secs || index * 30),
+                  text: msg.message,
+                }))
+              : [];
+
+            return {
+              id: conv.conversation_id,
+              title: conv.title,
+              participant: conv.participant,
+              date: new Date(conv.created_at).toISOString().split('T')[0],
+              duration: conv.duration,
+              sentiment: conv.sentiment as 'positive' | 'neutral' | 'negative',
+              summary: conv.summary,
+              keyMetrics: {
+                actionItems: conv.call_metrics?.[0]?.action_items || 0,
+                keyTopics: 0,
+                decisions: 0,
+              },
+              dataCollection: {
+                name: conv.data_collection?.[0]?.name,
+                profile: conv.data_collection?.[0]?.profile,
+                stage: conv.data_collection?.[0]?.stage,
+                revenue: conv.data_collection?.[0]?.revenue,
+                region: conv.data_collection?.[0]?.region,
+              },
+              metadata: conv.metadata || undefined,
+              transcript,
+            };
+          });
+          setCalls(transformedCalls);
+        }
       }
     } catch (err) {
       console.error('Error fetching conversations:', err);
