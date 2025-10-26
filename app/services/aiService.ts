@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { verificationAgent, VerificationResult } from './verificationAgent.js';
+import { verificationAgent, VerificationResult } from './verificationAgent';
 
 // Matches Supabase schema
 interface QuantitativeAnalysis {
