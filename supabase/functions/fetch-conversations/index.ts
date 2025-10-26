@@ -96,7 +96,7 @@ serve(async (req) => {
     // Save conversations to database
     for (const conv of detailedConversations) {
       try {
-        // Upsert conversation
+        // Upsert conversation with transcript and metadata
         const { data: conversationData, error: convError } = await supabase
           .from('conversations')
           .upsert({
@@ -106,6 +106,8 @@ serve(async (req) => {
             duration: conv.call_duration_secs || 0,
             sentiment: determineSentiment(conv),
             summary: conv.call_summary_title || 'No summary available',
+            transcript: conv.transcript || [],
+            metadata: conv.metadata || {},
           }, {
             onConflict: 'conversation_id'
           })
