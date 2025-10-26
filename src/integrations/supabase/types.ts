@@ -93,6 +93,7 @@ export type Database = {
       }
       data_collection: {
         Row: {
+          analysis: Json | null
           conversation_id: string | null
           created_at: string | null
           id: string
@@ -103,6 +104,7 @@ export type Database = {
           stage: string | null
         }
         Insert: {
+          analysis?: Json | null
           conversation_id?: string | null
           created_at?: string | null
           id?: string
@@ -113,6 +115,7 @@ export type Database = {
           stage?: string | null
         }
         Update: {
+          analysis?: Json | null
           conversation_id?: string | null
           created_at?: string | null
           id?: string
