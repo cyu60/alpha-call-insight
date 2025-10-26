@@ -60,6 +60,7 @@ export type Database = {
           sentiment: string
           summary: string | null
           title: string
+          transcript: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -72,6 +73,7 @@ export type Database = {
           sentiment: string
           summary?: string | null
           title: string
+          transcript?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -84,6 +86,7 @@ export type Database = {
           sentiment?: string
           summary?: string | null
           title?: string
+          transcript?: Json | null
           updated_at?: string | null
         }
         Relationships: []
