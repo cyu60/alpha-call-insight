@@ -50,11 +50,19 @@ export const useConversations = () => {
 
       // First, fetch fresh data from ElevenLabs API to sync database
       console.log('Fetching from ElevenLabs API...');
-      const { error: fnError } = await supabase.functions.invoke('fetch-conversations');
+      const { data: apiData, error: fnError } = await supabase.functions.invoke('fetch-conversations');
 
       if (fnError) {
         console.error('Edge function error:', fnError);
         throw fnError;
+      }
+
+      // Optimistically render from API while DB sync completes
+      if (apiData?.conversations) {
+        const fromApi: Call[] = apiData.conversations.map((conv: ElevenLabsConversation) => 
+          transformConversation(conv)
+        );
+        setCalls(fromApi);
       }
 
       // Now fetch from database with all the synced data
