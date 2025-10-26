@@ -33,10 +33,45 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Successfully fetched conversations:', data);
+    console.log('Successfully fetched conversations list');
+
+    // Filter for Gary Tan AI only
+    const garyConversations = data.conversations?.filter((conv: any) => 
+      conv.agent_name === 'Gary Tan AI'
+    ) || [];
+
+    console.log(`Found ${garyConversations.length} Gary Tan AI conversations`);
+
+    // Fetch full details for each conversation including transcript
+    const detailedConversations = await Promise.all(
+      garyConversations.map(async (conv: any) => {
+        try {
+          const detailResponse = await fetch(
+            `https://api.elevenlabs.io/v1/convai/conversations/${conv.conversation_id}`,
+            {
+              method: 'GET',
+              headers: {
+                'xi-api-key': ELEVENLABS_API_KEY,
+              },
+            }
+          );
+
+          if (detailResponse.ok) {
+            const details = await detailResponse.json();
+            return { ...conv, ...details };
+          }
+          return conv;
+        } catch (error) {
+          console.error(`Failed to fetch details for ${conv.conversation_id}:`, error);
+          return conv;
+        }
+      })
+    );
+
+    console.log('Successfully fetched detailed conversations');
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ conversations: detailedConversations }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
