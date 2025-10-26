@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Call } from "@/types/call";
 
+interface ElevenLabsMessage {
+  role: string;
+  message: string;
+  time_in_call_secs?: number;
+}
+
 interface ElevenLabsConversation {
   conversation_id: string;
   agent_id: string;
@@ -13,6 +19,13 @@ interface ElevenLabsConversation {
   message_count: number;
   call_successful: string;
   direction: string;
+  transcript?: ElevenLabsMessage[];
+  analysis?: {
+    evaluation_criteria_results?: Record<string, {
+      result: boolean;
+      reason?: string;
+    }>;
+  };
 }
 
 export const useConversations = () => {
@@ -50,13 +63,23 @@ export const useConversations = () => {
   const transformConversation = (conv: ElevenLabsConversation): Call => {
     const date = new Date(conv.start_time_unix_secs * 1000);
     
-    // Determine sentiment based on call success
+    // Determine sentiment based on call success and evaluation
     let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
-    if (conv.call_successful === 'success') {
+    if (conv.analysis?.evaluation_criteria_results) {
+      const results = Object.values(conv.analysis.evaluation_criteria_results);
+      const passCount = results.filter(r => r.result).length;
+      const passRate = passCount / results.length;
+      
+      if (passRate >= 0.7) sentiment = 'positive';
+      else if (passRate <= 0.3) sentiment = 'negative';
+    } else if (conv.call_successful === 'success') {
       sentiment = 'positive';
     } else if (conv.call_successful === 'failed') {
       sentiment = 'negative';
     }
+
+    const transcript = parseTranscript(conv.transcript || []);
+    const summary = generateSummary(transcript, conv.call_summary_title);
 
     return {
       id: conv.conversation_id,
@@ -65,35 +88,63 @@ export const useConversations = () => {
       date: date.toISOString().split('T')[0],
       duration: conv.call_duration_secs,
       sentiment,
-      summary: `Call with ${conv.agent_name}. Duration: ${formatCallDuration(conv.call_duration_secs)}. ${conv.message_count} messages exchanged.`,
+      summary,
       keyMetrics: {
-        actionItems: Math.floor(conv.message_count / 10), // Rough estimate
-        keyTopics: Math.floor(conv.message_count / 8),
-        decisions: conv.call_successful === 'success' ? 1 : 0,
+        actionItems: countActionItems(transcript),
+        keyTopics: countKeyTopics(transcript),
+        decisions: countDecisions(conv.analysis?.evaluation_criteria_results),
       },
-      transcript: generateMockTranscript(conv),
+      transcript,
     };
   };
 
-  const formatCallDuration = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
+  const parseTranscript = (messages: ElevenLabsMessage[]) => {
+    return messages.map((msg, index) => ({
+      speaker: msg.role === 'user' ? 'Caller' : 'Gary Tan AI',
+      timestamp: formatTimestamp(msg.time_in_call_secs || index * 30),
+      text: msg.message,
+    }));
   };
 
-  const generateMockTranscript = (conv: ElevenLabsConversation) => {
-    return [
-      {
-        speaker: conv.agent_name,
-        timestamp: "00:00",
-        text: `Welcome to ${conv.call_summary_title}. How can I help you today?`
-      },
-      {
-        speaker: "Caller",
-        timestamp: "00:15",
-        text: "Thank you for taking my call. I'd like to discuss our startup opportunity."
-      }
-    ];
+  const formatTimestamp = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const generateSummary = (transcript: any[], title?: string): string => {
+    if (!transcript.length) return title || 'No summary available';
+    
+    const userMessages = transcript.filter(t => t.speaker === 'Caller');
+    if (userMessages.length === 0) return title || 'Call initiated';
+    
+    const firstUserMessage = userMessages[0].text;
+    return firstUserMessage.slice(0, 200) + (firstUserMessage.length > 200 ? '...' : '');
+  };
+
+  const countActionItems = (transcript: any[]): number => {
+    const actionWords = ['will', 'should', 'need to', 'must', 'todo', 'action', 'follow up', 'next step'];
+    return transcript.filter(t => 
+      actionWords.some(word => t.text.toLowerCase().includes(word))
+    ).length;
+  };
+
+  const countKeyTopics = (transcript: any[]): number => {
+    const topics = new Set<string>();
+    const topicWords = ['market', 'product', 'revenue', 'growth', 'team', 'strategy', 'funding', 'traction', 'customer'];
+    
+    transcript.forEach(t => {
+      topicWords.forEach(word => {
+        if (t.text.toLowerCase().includes(word)) topics.add(word);
+      });
+    });
+    
+    return topics.size;
+  };
+
+  const countDecisions = (evaluationResults?: Record<string, { result: boolean }>): number => {
+    if (!evaluationResults) return 0;
+    return Object.values(evaluationResults).filter(r => r.result).length;
   };
 
 
