@@ -71,7 +71,11 @@ export async function verificationAgent(
     const anthropicTools = toolsList.tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      input_schema: tool.inputSchema,
+      input_schema: {
+        type: "object" as const,
+        properties: tool.inputSchema.properties || {},
+        required: tool.inputSchema.required || [],
+      },
     }));
 
     // Create prompt for Claude to verify founder claims
@@ -159,13 +163,13 @@ Return ONLY a JSON object with:
             // Call MCP server
             const mcpResult = await mcpClient!.callTool({
               name: toolUse.name,
-              arguments: toolUse.input,
+              arguments: toolUse.input as { [x: string]: unknown },
             });
 
             console.log(`✅ MCP tool returned results`);
 
             // Extract text content from MCP result
-            const resultText = mcpResult.content
+            const resultText = (mcpResult.content as any[])
               .map((item: any) => item.text)
               .join('\n');
 
