@@ -55,6 +55,7 @@ export type Database = {
           created_at: string | null
           duration: number
           id: string
+          metadata: Json | null
           participant: string
           sentiment: string
           summary: string | null
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string | null
           duration: number
           id?: string
+          metadata?: Json | null
           participant: string
           sentiment: string
           summary?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           created_at?: string | null
           duration?: number
           id?: string
+          metadata?: Json | null
           participant?: string
           sentiment?: string
           summary?: string | null
